@@ -20,6 +20,17 @@ export type LeadDeskCampaign = {
   disabled: boolean
 }
 
+export type LeadDeskRecording = {
+  created_at: string
+  call_recording: string        // filename or full URL
+  phone_number: string | null
+  result: string | null
+  comment: string | null
+  direction: 'in' | 'out'
+  status: string | null
+  duration: string | null
+}
+
 async function getToken(): Promise<string> {
   const res = await fetch(`${API_URL}/oauth/access-token`, {
     method: 'POST',
@@ -55,4 +66,35 @@ export async function getCampaigns(): Promise<LeadDeskCampaign[]> {
   const token = await getToken()
   const data = await ldFetch('/campaigns?limit=100', token)
   return (data.collection ?? []).filter((c: LeadDeskCampaign) => !c.disabled)
+}
+
+/** Find all recordings for a customer phone number via the GDPR API */
+export async function getRecordingsByPhone(phone: string): Promise<LeadDeskRecording[]> {
+  const token = await getToken()
+  const data = await ldFetch(`/gdpr/contact?phone=${encodeURIComponent(phone)}`, token)
+  const calls: LeadDeskRecording[] = data.calls?.agent ?? []
+  return calls.filter(c => c.call_recording)
+}
+
+/**
+ * Get the signed download URL for a recording.
+ * `callRecording` can be a filename like "3699-CALL-agent-...mp3"
+ * or a full URL; we extract the filename if needed.
+ */
+export async function getRecordingDownloadUrl(callRecording: string): Promise<string> {
+  // If it's already a full URL (rec-*.leaddesk.com), return it directly
+  if (callRecording.startsWith('http')) return callRecording
+
+  const token = await getToken()
+  const res = await fetch(
+    `${API_URL}/audio/files/${encodeURIComponent(callRecording)}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      redirect: 'manual',
+      cache: 'no-store',
+    }
+  )
+  const location = res.headers.get('location')
+  if (!location) throw new Error(`No redirect from LeadDesk audio endpoint (status ${res.status})`)
+  return location
 }

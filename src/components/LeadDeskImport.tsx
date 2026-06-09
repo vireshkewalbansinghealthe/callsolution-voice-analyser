@@ -21,7 +21,7 @@ export default function LeadDeskImport({ activeAgents, inactiveAgents, campaigns
   const [showInactive, setShowInactive] = useState(false)
   const [modal, setModal] = useState<{ agent: LeadDeskAgent } | null>(null)
 
-  // Upload form state
+  // Upload state
   const [bestand, setBestand] = useState<File | null>(null)
   const [titel, setTitel] = useState('')
   const [klantNaam, setKlantNaam] = useState('')
@@ -49,6 +49,8 @@ export default function LeadDeskImport({ activeAgents, inactiveAgents, campaigns
   function closeModal() {
     setModal(null)
   }
+
+  // ── Manual upload ──────────────────────────────────────────────────────────
 
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault()
@@ -109,13 +111,10 @@ export default function LeadDeskImport({ activeAgents, inactiveAgents, campaigns
     router.refresh()
   }
 
-  const allAgents = showInactive ? [...activeAgents, ...inactiveAgents] : activeAgents
-
   return (
     <>
-      {/* Agent list */}
+      {/* Agent grid */}
       <div className="space-y-6">
-        {/* Active agents */}
         <div>
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
             Actieve medewerkers ({activeAgents.length})
@@ -135,7 +134,6 @@ export default function LeadDeskImport({ activeAgents, inactiveAgents, campaigns
           </div>
         </div>
 
-        {/* Toggle inactive */}
         {inactiveAgents.length > 0 && (
           <div>
             <button
@@ -167,10 +165,11 @@ export default function LeadDeskImport({ activeAgents, inactiveAgents, campaigns
         )}
       </div>
 
-      {/* Upload modal */}
+      {/* Modal */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <div className="flex items-center gap-3">
@@ -192,132 +191,126 @@ export default function LeadDeskImport({ activeAgents, inactiveAgents, campaigns
             </div>
 
             <form onSubmit={handleUpload} className="p-6 space-y-4">
-              {/* File picker */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Audiobestand <span className="text-red-400">*</span></label>
-                <input ref={fileInputRef} type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac" className="hidden"
-                  onChange={e => {
-                    const f = e.target.files?.[0]
-                    if (!f) return
-                    setBestand(f)
-                    if (!titel) setTitel(f.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '))
-                  }}
-                />
-                {bestand ? (
-                  <div className="flex items-center gap-3 p-3 rounded-xl border border-green-200 bg-green-50">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#009900" strokeWidth="2">
-                      <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
-                    </svg>
-                    <span className="text-sm text-gray-700 truncate flex-1">{bestand.name}</span>
-                    <button type="button" onClick={() => setBestand(null)} className="text-gray-400 hover:text-red-500">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                      </svg>
-                    </button>
-                  </div>
-                ) : (
-                  <button type="button" onClick={() => fileInputRef.current?.click()}
-                    className="w-full p-4 rounded-xl border-2 border-dashed border-gray-200 text-sm text-gray-500 hover:border-green-300 hover:text-green-600 transition-colors">
-                    Klik om audiobestand te selecteren
-                  </button>
-                )}
-              </div>
-
-              {/* Titel */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Titel <span className="text-red-400">*</span></label>
-                <input type="text" value={titel} onChange={e => setTitel(e.target.value)} required
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-gray-800 text-sm focus:outline-none"
-                  onFocus={e => e.target.style.borderColor = '#009900'}
-                  onBlur={e => e.target.style.borderColor = '#e5e7eb'}
-                />
-              </div>
-
-              {/* Klant + Campagne */}
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Klant</label>
-                  <input type="text" value={klantNaam} onChange={e => setKlantNaam(e.target.value)} placeholder="Naam klant"
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Audiobestand <span className="text-red-400">*</span></label>
+                  <input ref={fileInputRef} type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac" className="hidden"
+                    onChange={e => {
+                      const f = e.target.files?.[0]
+                      if (!f) return
+                      setBestand(f)
+                      if (!titel) setTitel(f.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '))
+                    }}
+                  />
+                  {bestand ? (
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-green-200 bg-green-50">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#009900" strokeWidth="2">
+                        <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                      </svg>
+                      <span className="text-sm text-gray-700 truncate flex-1">{bestand.name}</span>
+                      <button type="button" onClick={() => setBestand(null)} className="text-gray-400 hover:text-red-500">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => fileInputRef.current?.click()}
+                      className="w-full p-4 rounded-xl border-2 border-dashed border-gray-200 text-sm text-gray-500 hover:border-green-300 hover:text-green-600 transition-colors">
+                      Klik om audiobestand te selecteren
+                    </button>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Titel <span className="text-red-400">*</span></label>
+                  <input type="text" value={titel} onChange={e => setTitel(e.target.value)} required
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-gray-800 text-sm focus:outline-none"
                     onFocus={e => e.target.style.borderColor = '#009900'}
                     onBlur={e => e.target.style.borderColor = '#e5e7eb'}
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Campagne</label>
-                  <select value={campagne} onChange={e => setCampagne(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-gray-800 text-sm focus:outline-none bg-white"
-                    onFocus={e => e.target.style.borderColor = '#009900'}
-                    onBlur={e => e.target.style.borderColor = '#e5e7eb'}
-                  >
-                    <option value="">— Geen —</option>
-                    {campaigns.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                  </select>
-                </div>
-              </div>
 
-              {/* Sentiment */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Sentiment</label>
-                <div className="flex gap-2">
-                  {SENTIMENT_OPTIES.map(s => (
-                    <button key={s} type="button" onClick={() => setSentiment(sentiment === s ? '' : s)}
-                      className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all border ${sentiment === s ? 'text-white border-transparent' : 'text-gray-600 border-gray-200 hover:border-green-300 bg-white'}`}
-                      style={sentiment === s ? { background: '#009900' } : {}}>
-                      {s === 'positief' ? '😊' : s === 'negatief' ? '😞' : '😐'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Resultaat */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Resultaat</label>
-                <div className="flex gap-2 flex-wrap">
-                  {RESULTAAT_OPTIES.map(r => (
-                    <button key={r} type="button" onClick={() => setResultaat(resultaat === r ? '' : r)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${resultaat === r ? 'text-white border-transparent' : 'text-gray-600 border-gray-200 hover:border-green-300 bg-white'}`}
-                      style={resultaat === r ? { background: r === 'sale' ? '#006600' : '#009900' } : {}}>
-                      {r === 'sale' ? '✓ ' : ''}{r.charAt(0).toUpperCase() + r.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Notities */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Notities</label>
-                <textarea value={notities} onChange={e => setNotities(e.target.value)} rows={3}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-gray-800 text-sm focus:outline-none resize-none"
-                  onFocus={e => e.target.style.borderColor = '#009900'}
-                  onBlur={e => e.target.style.borderColor = '#e5e7eb'}
-                />
-              </div>
-
-              {uploading && (
-                <div>
-                  <div className="flex justify-between text-xs text-gray-500 mb-1"><span>Uploaden...</span><span>{progress}%</span></div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: '#009900' }} />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Klant</label>
+                    <input type="text" value={klantNaam} onChange={e => setKlantNaam(e.target.value)} placeholder="Naam klant"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-gray-800 text-sm focus:outline-none"
+                      onFocus={e => e.target.style.borderColor = '#009900'}
+                      onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Campagne</label>
+                    <select value={campagne} onChange={e => setCampagne(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-gray-800 text-sm focus:outline-none bg-white"
+                      onFocus={e => e.target.style.borderColor = '#009900'}
+                      onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+                    >
+                      <option value="">— Geen —</option>
+                      {campaigns.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    </select>
                   </div>
                 </div>
-              )}
 
-              {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{error}</div>}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Sentiment</label>
+                  <div className="flex gap-2">
+                    {SENTIMENT_OPTIES.map(s => (
+                      <button key={s} type="button" onClick={() => setSentiment(sentiment === s ? '' : s)}
+                        className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all border ${sentiment === s ? 'text-white border-transparent' : 'text-gray-600 border-gray-200 hover:border-green-300 bg-white'}`}
+                        style={sentiment === s ? { background: '#009900' } : {}}>
+                        {s === 'positief' ? '😊' : s === 'negatief' ? '😞' : '😐'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-              <div className="flex gap-3 pt-1">
-                <button type="button" onClick={closeModal} className="flex-1 py-2.5 rounded-xl font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 text-sm">
-                  Annuleren
-                </button>
-                <button type="submit" disabled={uploading} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm flex items-center justify-center gap-2 disabled:opacity-60"
-                  style={{ background: '#009900' }}>
-                  {uploading ? (
-                    <><svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>Bezig...</>
-                  ) : (
-                    <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Importeren</>
-                  )}
-                </button>
-              </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Resultaat</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {RESULTAAT_OPTIES.map(r => (
+                      <button key={r} type="button" onClick={() => setResultaat(resultaat === r ? '' : r)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${resultaat === r ? 'text-white border-transparent' : 'text-gray-600 border-gray-200 hover:border-green-300 bg-white'}`}
+                        style={resultaat === r ? { background: r === 'sale' ? '#006600' : '#009900' } : {}}>
+                        {r === 'sale' ? '✓ ' : ''}{r.charAt(0).toUpperCase() + r.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Notities</label>
+                  <textarea value={notities} onChange={e => setNotities(e.target.value)} rows={3}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-gray-800 text-sm focus:outline-none resize-none"
+                    onFocus={e => e.target.style.borderColor = '#009900'}
+                    onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+                  />
+                </div>
+
+                {uploading && (
+                  <div>
+                    <div className="flex justify-between text-xs text-gray-500 mb-1"><span>Uploaden...</span><span>{progress}%</span></div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: '#009900' }} />
+                    </div>
+                  </div>
+                )}
+
+                {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{error}</div>}
+
+                <div className="flex gap-3 pt-1">
+                  <button type="button" onClick={closeModal} className="flex-1 py-2.5 rounded-xl font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 text-sm">
+                    Annuleren
+                  </button>
+                  <button type="submit" disabled={uploading || !bestand} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+                    style={{ background: '#009900' }}>
+                    {uploading ? (
+                      <><svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>Bezig...</>
+                    ) : (
+                      <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Importeren</>
+                    )}
+                  </button>
+                </div>
             </form>
           </div>
         </div>
