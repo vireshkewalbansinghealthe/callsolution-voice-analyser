@@ -3,35 +3,7 @@ import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 import DashboardDropUpload from '@/components/DashboardDropUpload'
-
-type Gesprek = {
-  id: string
-  titel: string
-  medewerker_naam: string | null
-  klant_naam: string | null
-  sentiment: string | null
-  resultaat: string | null
-  notities: string | null
-  bestand_naam: string | null
-  duur_seconden: number | null
-  created_at: string
-}
-
-function formatDuur(sec: number | null) {
-  if (!sec) return '—'
-  const m = Math.floor(sec / 60)
-  const s = sec % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
-}
-
-function sentimentBadge(s: string | null) {
-  const map: Record<string, { cls: string; label: string }> = {
-    positief: { cls: 'bg-green-100 text-green-700', label: '😊 Positief' },
-    negatief: { cls: 'bg-red-100 text-red-700', label: '😞 Negatief' },
-    neutraal: { cls: 'bg-gray-100 text-gray-600', label: '😐 Neutraal' },
-  }
-  return map[s ?? ''] ?? { cls: 'bg-gray-100 text-gray-400', label: '—' }
-}
+import GesprekkenClient from '@/components/GesprekkenClient'
 
 export default async function GesprekkenPage() {
   const supabase = await createClient()
@@ -49,10 +21,9 @@ export default async function GesprekkenPage() {
       <DashboardDropUpload />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Gesprekken</h1>
-            <p className="text-gray-500 mt-1">{gesprekken?.length ?? 0} gesprekken gevonden</p>
           </div>
           <Link
             href="/gesprekken/nieuw"
@@ -67,69 +38,7 @@ export default async function GesprekkenPage() {
         </div>
 
         {gesprekken && gesprekken.length > 0 ? (
-          <div className="grid gap-4">
-            {gesprekken.map((g: Gesprek) => {
-              const badge = sentimentBadge(g.sentiment)
-              return (
-                <Link
-                  key={g.id}
-                  href={`/gesprekken/${g.id}`}
-                  className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition-all block"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4 flex-1">
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#e8f5e9' }}>
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#009900" strokeWidth="1.5">
-                          <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
-                        </svg>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-800 truncate">{g.titel}</h3>
-                        <div className="flex items-center gap-3 mt-1 flex-wrap">
-                          {g.medewerker_naam && (
-                            <span className="text-xs text-gray-500 flex items-center gap-1">
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-                                <circle cx="12" cy="7" r="4"/>
-                              </svg>
-                              {g.medewerker_naam}
-                            </span>
-                          )}
-                          {g.klant_naam && (
-                            <span className="text-xs text-gray-500">Klant: {g.klant_naam}</span>
-                          )}
-                          <span className="text-xs text-gray-400">
-                            {new Date(g.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
-                          </span>
-                          {g.duur_seconden && (
-                            <span className="text-xs text-gray-400 flex items-center gap-1">
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                              </svg>
-                              {formatDuur(g.duur_seconden)}
-                            </span>
-                          )}
-                        </div>
-                        {g.notities && (
-                          <p className="text-sm text-gray-500 mt-2 line-clamp-2">{g.notities}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${badge.cls}`}>
-                        {badge.label}
-                      </span>
-                      {g.resultaat === 'sale' && (
-                        <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-green-600 text-white">
-                          Sale ✓
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
+          <GesprekkenClient gesprekken={gesprekken} />
         ) : (
           <div className="bg-white rounded-2xl p-16 text-center shadow-sm border border-gray-100">
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ background: '#e8f5e9' }}>
