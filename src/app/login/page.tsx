@@ -34,12 +34,12 @@ export default function LoginPage() {
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-12 text-white">
         <div className="max-w-md">
-          <div className="mb-10">
+          <div className="mb-12">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="https://callsolution.nl/wp-content/uploads/2023/03/Untitled-design-4-300x150.png"
               alt="CallSolution"
-              className="h-14 w-auto object-contain brightness-0 invert"
+              className="h-28 w-auto object-contain brightness-0 invert"
             />
           </div>
           <h2 className="text-4xl font-bold mb-4 leading-tight">
@@ -48,18 +48,6 @@ export default function LoginPage() {
           <p className="text-green-100 text-lg leading-relaxed">
             Upload, beluister en annoteer salesgesprekken. Ontdek patronen en verbeter de conversie van uw team.
           </p>
-          <div className="mt-10 grid grid-cols-3 gap-6">
-            {[
-              { label: 'Gesprekken', value: '2.4k+' },
-              { label: 'Medewerkers', value: '48' },
-              { label: 'Conversie', value: '+23%' },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-3xl font-bold">{stat.value}</div>
-                <div className="text-green-200 text-sm mt-1">{stat.label}</div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 

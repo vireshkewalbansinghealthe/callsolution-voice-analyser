@@ -17,6 +17,7 @@ export default function DashboardDropUpload() {
   const [bestand, setBestand] = useState<File | null>(null)
   const [titel, setTitel] = useState('')
   const [medewerkerNaam, setMedewerkerNaam] = useState('')
+  const [defaultMedewerker, setDefaultMedewerker] = useState('')
   const [klantNaam, setKlantNaam] = useState('')
   const [sentiment, setSentiment] = useState('')
   const [resultaat, setResultaat] = useState('')
@@ -24,6 +25,15 @@ export default function DashboardDropUpload() {
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      const name = user?.user_metadata?.full_name ?? user?.email ?? ''
+      setDefaultMedewerker(name)
+      setMedewerkerNaam(name)
+    })
+  }, [])
 
   const openFile = useCallback((file: File) => {
     const allowed = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/aac', 'audio/mp4']
@@ -68,7 +78,7 @@ export default function DashboardDropUpload() {
     setModalOpen(false)
     setBestand(null)
     setTitel('')
-    setMedewerkerNaam('')
+    setMedewerkerNaam(defaultMedewerker)
     setKlantNaam('')
     setSentiment('')
     setResultaat('')

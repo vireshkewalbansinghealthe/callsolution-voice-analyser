@@ -14,6 +14,14 @@ export default function NieuwGesprekPage() {
 
   const [titel, setTitel] = useState('')
   const [medewerkerNaam, setMedewerkerNaam] = useState('')
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      const name = user?.user_metadata?.full_name ?? user?.email ?? ''
+      setMedewerkerNaam(name)
+    })
+  }, [])
   const [klantNaam, setKlantNaam] = useState('')
   const [sentiment, setSentiment] = useState('')
   const [resultaat, setResultaat] = useState('')

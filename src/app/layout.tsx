@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "CallSolution Voice Analyser",
   description: "Analyseer en beheer uw salesgesprekken",
+  icons: {
+    icon: '/favicon.png',
+  },
 };
 
 export default function RootLayout({
