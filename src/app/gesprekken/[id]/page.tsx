@@ -4,6 +4,7 @@ import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 import AudioPlayer from '@/components/AudioPlayer'
 import NotitiesEditor from '@/components/NotitiesEditor'
+import ComplianceChecker from '@/components/ComplianceChecker'
 
 export default async function GesprekDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -112,6 +113,12 @@ export default async function GesprekDetailPage({ params }: { params: Promise<{ 
               </div>
             )}
           </div>
+
+          {/* Compliance Checker */}
+          <ComplianceChecker
+            gesprekId={gesprek.id}
+            initialResult={gesprek.compliance_resultaten ?? null}
+          />
 
           {/* Notes */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
