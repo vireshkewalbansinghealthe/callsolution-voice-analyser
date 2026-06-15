@@ -7,6 +7,11 @@ import type { LeadDeskCampaign, LeadDeskRecording } from '@/lib/leaddesk'
 const SENTIMENT_OPTIES = ['positief', 'negatief', 'neutraal']
 const RESULTAAT_OPTIES = ['sale', 'geen sale', 'follow-up', 'onbekend']
 
+const COMPLIANCE_PHASES = ['Audio ophalen…', 'Transcriberen…', 'Analyseren…']
+
+type ComplianceItem = { id: string; label: string; passed: boolean; evidence: string | null; note: string }
+type ComplianceResult = { score: number; items: ComplianceItem[]; samenvatting: string; transcript: string }
+
 type Props = {
   campaigns: LeadDeskCampaign[]
 }
@@ -31,6 +36,37 @@ export default function LeadDeskSearch({ campaigns }: Props) {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
   const [importMap, setImportMap] = useState<Record<number, ImportState>>({})
   const [successIdx, setSuccessIdx] = useState<number | null>(null)
+  const [complianceMap, setComplianceMap] = useState<Record<number, ComplianceResult>>({})
+  const [complianceLoadingIdx, setComplianceLoadingIdx] = useState<number | null>(null)
+  const [compliancePhase, setCompliancePhase] = useState(0)
+  const [complianceError, setComplianceError] = useState<Record<number, string>>({})
+
+  async function runCompliance(idx: number, rec: LeadDeskRecording) {
+    setComplianceLoadingIdx(idx)
+    setCompliancePhase(0)
+    setComplianceError(e => ({ ...e, [idx]: '' }))
+
+    const timer = setInterval(() => {
+      setCompliancePhase(p => (p < COMPLIANCE_PHASES.length - 1 ? p + 1 : p))
+    }, 9000)
+
+    try {
+      const res = await fetch('/api/leaddesk/compliance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rec: rec.call_recording }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Analyse mislukt')
+      setComplianceMap(m => ({ ...m, [idx]: data }))
+    } catch (err) {
+      setComplianceError(e => ({ ...e, [idx]: String(err) }))
+    } finally {
+      clearInterval(timer)
+      setComplianceLoadingIdx(null)
+      setCompliancePhase(0)
+    }
+  }
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -249,6 +285,90 @@ export default function LeadDeskSearch({ campaigns }: Props) {
                     <div className="border-t border-gray-100 p-4 space-y-4 bg-gray-50">
                       {/* Audio player */}
                       <AudioPlayer src={streamSrc} />
+
+                      {/* Compliance checker */}
+                      <div className="bg-white rounded-xl border border-gray-200 p-3.5">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: '#e8f5e9' }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#009900" strokeWidth="2.5">
+                                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                              </svg>
+                            </div>
+                            <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Compliance</span>
+                          </div>
+                          {complianceMap[idx] && (
+                            <div
+                              className="px-2.5 py-1 rounded-lg text-xs font-bold text-white"
+                              style={{ background: complianceMap[idx].score >= 80 ? '#009900' : complianceMap[idx].score >= 60 ? '#f97316' : '#ef4444' }}
+                            >
+                              {complianceMap[idx].score}/100
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Loading */}
+                        {complianceLoadingIdx === idx && (
+                          <div className="py-3 text-center space-y-2">
+                            <div className="flex justify-center gap-1.5">
+                              {COMPLIANCE_PHASES.map((_, i) => (
+                                <div key={i} className="h-1 rounded-full transition-all duration-500"
+                                  style={{ width: i <= compliancePhase ? '28px' : '12px', background: i <= compliancePhase ? '#009900' : '#d1d5db' }} />
+                              ))}
+                            </div>
+                            <p className="text-xs text-gray-500">{COMPLIANCE_PHASES[compliancePhase]}</p>
+                          </div>
+                        )}
+
+                        {/* Error */}
+                        {complianceError[idx] && complianceLoadingIdx !== idx && (
+                          <p className="text-xs text-red-600 mb-2">{complianceError[idx]}</p>
+                        )}
+
+                        {/* Results */}
+                        {complianceMap[idx] && complianceLoadingIdx !== idx && (
+                          <div className="space-y-1.5">
+                            {complianceMap[idx].items.map(item => (
+                              <div key={item.id} className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg ${item.passed ? 'bg-green-50' : 'bg-red-50'}`}>
+                                <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${item.passed ? 'bg-green-500' : 'bg-red-400'}`}>
+                                  {item.passed ? (
+                                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                  ) : (
+                                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                  )}
+                                </div>
+                                <span className={`text-xs font-medium flex-1 ${item.passed ? 'text-green-800' : 'text-red-700'}`}>{item.label}</span>
+                              </div>
+                            ))}
+                            {complianceMap[idx].samenvatting && (
+                              <p className="text-xs text-gray-500 pt-1 leading-relaxed">{complianceMap[idx].samenvatting}</p>
+                            )}
+                            <button
+                              onClick={() => runCompliance(idx, rec)}
+                              className="text-xs text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1 pt-0.5"
+                            >
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="23 4 23 10 17 10"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                              </svg>
+                              Opnieuw
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Start button */}
+                        {!complianceMap[idx] && complianceLoadingIdx !== idx && (
+                          <button
+                            onClick={() => runCompliance(idx, rec)}
+                            className="w-full py-2 rounded-lg text-xs font-semibold text-white flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity"
+                            style={{ background: '#009900' }}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                            </svg>
+                            Compliance check uitvoeren
+                          </button>
+                        )}
+                      </div>
 
                       {/* Import form */}
                       <div className="space-y-3">
