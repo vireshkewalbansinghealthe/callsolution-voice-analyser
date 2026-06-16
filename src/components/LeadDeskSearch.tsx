@@ -328,7 +328,7 @@ export default function LeadDeskSearch({ campaigns }: Props) {
                         {/* Results */}
                         {complianceMap[idx] && complianceLoadingIdx !== idx && (
                           <div className="space-y-1.5">
-                            {complianceMap[idx].items.map(item => (
+                            {(complianceMap[idx].items ?? []).map(item => (
                               <div key={item.id} className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg ${item.passed ? 'bg-green-50' : 'bg-red-50'}`}>
                                 <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${item.passed ? 'bg-green-500' : 'bg-red-400'}`}>
                                   {item.passed ? (

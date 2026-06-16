@@ -120,9 +120,11 @@ export async function POST(req: NextRequest) {
     const toolUse = message.content.find(b => b.type === 'tool_use')
     if (!toolUse || toolUse.type !== 'tool_use') throw new Error('Geen analyse resultaat ontvangen')
 
-    const parsed = toolUse.input as { score: number; samenvatting: string; items: ComplianceItem[] }
+    const parsed = toolUse.input as { score: number; samenvatting: string; items?: ComplianceItem[] }
     const result: ComplianceResult = {
-      ...parsed,
+      score: parsed.score ?? 0,
+      samenvatting: parsed.samenvatting ?? '',
+      items: parsed.items ?? [],
       transcript,
       analysed_at: new Date().toISOString(),
     }
