@@ -36,18 +36,34 @@ COMPLIANCE PUNTEN:
 
 5. KWALIFICATIE_COMPLEET: De huidige situatie van de klant (provider + prijs + diensten) is volledig gecheckt en besproken.
 
-Geef je analyse als JSON in dit exacte formaat (geen markdown, alleen JSON):
-{
-  "score": <getal 0-100>,
-  "samenvatting": "<Nederlandse samenvatting van de compliance status>",
-  "items": [
-    {"id":"acm_introductie","label":"ACM Introductie","passed":<true/false>,"evidence":"<exacte quote of null>","note":"<Nederlandse toelichting>"},
-    {"id":"provider_gevraagd","label":"Huidige provider gevraagd","passed":<true/false>,"evidence":"<exacte quote of null>","note":"<toelichting>"},
-    {"id":"prijs_gevraagd","label":"Prijs gevraagd","passed":<true/false>,"evidence":"<exacte quote of null>","note":"<toelichting>"},
-    {"id":"diensten_gevraagd","label":"Diensten gevraagd","passed":<true/false>,"evidence":"<exacte quote of null>","note":"<toelichting>"},
-    {"id":"kwalificatie_compleet","label":"Kwalificatie compleet","passed":<true/false>,"evidence":"<exacte quote of null>","note":"<toelichting>"}
-  ]
-}`
+Roep de tool compliance_analyse aan met je bevindingen.`
+
+const TOOL: Anthropic.Tool = {
+  name: 'compliance_analyse',
+  description: 'Sla het resultaat van de compliance analyse op',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      score: { type: 'number', description: 'Score van 0 tot 100' },
+      samenvatting: { type: 'string', description: 'Korte Nederlandse samenvatting van de compliance status' },
+      items: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            label: { type: 'string' },
+            passed: { type: 'boolean' },
+            evidence: { type: 'string', description: 'Korte quote uit het transcript of lege string als niet gevonden' },
+            note: { type: 'string', description: 'Korte Nederlandse toelichting' },
+          },
+          required: ['id', 'label', 'passed', 'evidence', 'note'],
+        },
+      },
+    },
+    required: ['score', 'samenvatting', 'items'],
+  },
+}
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -89,21 +105,22 @@ export async function POST(req: NextRequest) {
 
     const transcript = String(transcription)
 
-    // Stap 4: Compliance analyse met Claude
+    // Stap 4: Compliance analyse met Claude via tool_use (garandeert geldige JSON)
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 1024,
+      tools: [TOOL],
+      tool_choice: { type: 'tool', name: 'compliance_analyse' },
       messages: [{
         role: 'user',
         content: `${PROMPT}\n\nTRANSCRIPT:\n${transcript}`,
       }],
     })
 
-    const text = message.content[0].type === 'text' ? message.content[0].text : ''
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) throw new Error('Geen geldig JSON antwoord van AI')
+    const toolUse = message.content.find(b => b.type === 'tool_use')
+    if (!toolUse || toolUse.type !== 'tool_use') throw new Error('Geen analyse resultaat ontvangen')
 
-    const parsed = JSON.parse(jsonMatch[0])
+    const parsed = toolUse.input as { score: number; samenvatting: string; items: ComplianceItem[] }
     const result: ComplianceResult = {
       ...parsed,
       transcript,
